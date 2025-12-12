@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Exam, Question } from '../types';
+import { Exam, Question, QuestionType } from '../types';
 import { Button } from './Button';
-import { Trash2, Plus, Save, ArrowLeft, Image as ImageIcon, X, Settings } from 'lucide-react';
+import { Trash2, Plus, Save, ArrowLeft, Image as ImageIcon, X, Settings, Hash, List } from 'lucide-react';
 
 interface ExamEditorProps {
   exam: Exam;
@@ -93,6 +93,20 @@ export const ExamEditor: React.FC<ExamEditorProps> = ({ exam: initialExam, onSav
     newQuestions[qIndex].text = text;
     setExam(prev => ({ ...prev, questions: newQuestions }));
   };
+  
+  const updateQuestionType = (qIndex: number, type: QuestionType) => {
+    const newQuestions = [...exam.questions];
+    newQuestions[qIndex].type = type;
+    // If switching to INTEGER, options might be irrelevant, but we keep them in memory or clear them?
+    // Let's keep them but hide them in UI.
+    setExam(prev => ({ ...prev, questions: newQuestions }));
+  };
+
+  const updateCorrectIntegerAnswer = (qIndex: number, ans: string) => {
+    const newQuestions = [...exam.questions];
+    newQuestions[qIndex].correctAnswer = ans;
+    setExam(prev => ({ ...prev, questions: newQuestions }));
+  };
 
   const updateOptionText = (qIndex: number, optIndex: number, text: string) => {
     const newQuestions = [...exam.questions];
@@ -102,7 +116,6 @@ export const ExamEditor: React.FC<ExamEditorProps> = ({ exam: initialExam, onSav
 
   const toggleCorrectOption = (qIndex: number, optIndex: number) => {
     const newQuestions = [...exam.questions];
-    // Toggle logic: if already correct, uncheck it. If not, check it and uncheck others (single choice assumption for simplicity)
     const currentStatus = newQuestions[qIndex].options[optIndex].isCorrect;
     
     newQuestions[qIndex].options.forEach((opt, idx) => {
@@ -120,6 +133,7 @@ export const ExamEditor: React.FC<ExamEditorProps> = ({ exam: initialExam, onSav
     const newQuestion: Question = {
       id: `q-${Date.now()}`,
       text: "New Question",
+      type: 'MCQ',
       options: [
         { id: `opt-${Date.now()}-0`, text: "Option A", isCorrect: false },
         { id: `opt-${Date.now()}-1`, text: "Option B", isCorrect: false },
@@ -220,7 +234,25 @@ export const ExamEditor: React.FC<ExamEditorProps> = ({ exam: initialExam, onSav
             <div key={q.id} className="border border-slate-200 rounded-lg p-4 hover:border-brand-200 transition-colors bg-white">
               <div className="flex justify-between items-start mb-2">
                 <div className="w-full mr-4">
-                    <label className="text-xs font-semibold text-slate-500 uppercase">Question {qIndex + 1}</label>
+                    <div className="flex justify-between items-center mb-2">
+                        <label className="text-xs font-semibold text-slate-500 uppercase">Question {qIndex + 1}</label>
+                        {/* Question Type Toggle */}
+                        <div className="flex items-center bg-slate-100 rounded-md p-1">
+                            <button 
+                                onClick={() => updateQuestionType(qIndex, 'MCQ')}
+                                className={`px-2 py-1 text-xs font-bold rounded ${q.type !== 'INTEGER' ? 'bg-white text-brand-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                            >
+                                <List className="w-3 h-3 inline mr-1" /> MCQ
+                            </button>
+                            <button 
+                                onClick={() => updateQuestionType(qIndex, 'INTEGER')}
+                                className={`px-2 py-1 text-xs font-bold rounded ${q.type === 'INTEGER' ? 'bg-white text-brand-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                            >
+                                <Hash className="w-3 h-3 inline mr-1" /> Integer
+                            </button>
+                        </div>
+                    </div>
+
                     <textarea
                         value={q.text}
                         onChange={(e) => updateQuestionText(qIndex, e.target.value)}
@@ -266,60 +298,74 @@ export const ExamEditor: React.FC<ExamEditorProps> = ({ exam: initialExam, onSav
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-4 border-l-2 border-brand-100 mt-4">
-                {q.options.map((opt, optIndex) => (
-                  <div key={opt.id} className={`flex flex-col p-2 rounded border ${opt.isCorrect ? 'bg-green-50 border-green-200' : 'bg-white border-slate-200'}`}>
-                    <div className="flex items-center gap-2">
+              {/* Conditional Rendering based on Type */}
+              {q.type === 'INTEGER' ? (
+                   <div className="mt-4 pl-4 border-l-2 border-brand-100">
+                        <label className="block text-xs font-bold text-slate-600 mb-1">Correct Numeric Answer</label>
                         <input
-                          type="radio"
-                          checked={!!opt.isCorrect}
-                          onChange={() => toggleCorrectOption(qIndex, optIndex)}
-                          className="text-brand-600 focus:ring-brand-500 h-4 w-4 cursor-pointer shrink-0"
-                          title="Mark as correct answer"
+                            type="text"
+                            value={q.correctAnswer || ''}
+                            onChange={(e) => updateCorrectIntegerAnswer(qIndex, e.target.value)}
+                            placeholder="e.g. 10.5, -4, 25"
+                            className="w-48 p-2 border border-slate-300 rounded outline-none focus:ring-1 focus:ring-brand-500 font-mono"
                         />
-                        <input
-                          type="text"
-                          value={opt.text}
-                          onChange={(e) => updateOptionText(qIndex, optIndex, e.target.value)}
-                          className="flex-1 bg-transparent border-none outline-none text-sm min-w-0"
-                          placeholder={`Option ${optIndex + 1}`}
-                        />
-                    </div>
-                    
-                    {/* Option Image Upload */}
-                    <div className="ml-6 mt-2">
-                         {opt.imageUrl ? (
-                            <div className="relative inline-block border rounded p-1 bg-white">
-                                <img src={opt.imageUrl} alt="Option" className="h-12 object-contain" />
-                                <button 
-                                    onClick={() => removeOptionImage(qIndex, optIndex)}
-                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"
-                                    title="Remove Image"
-                                >
-                                    <X className="w-3 h-3" />
-                                </button>
-                            </div>
-                        ) : (
-                            <div>
-                                <input 
-                                    type="file" 
-                                    id={`file-opt-${qIndex}-${optIndex}`}
-                                    className="hidden" 
-                                    accept="image/*"
-                                    onChange={(e) => handleOptionImageUpload(qIndex, optIndex, e)}
-                                />
-                                <label 
-                                    htmlFor={`file-opt-${qIndex}-${optIndex}`} 
-                                    className="inline-flex items-center text-xs text-slate-400 hover:text-brand-600 cursor-pointer"
-                                >
-                                    <ImageIcon className="w-3 h-3 mr-1" /> Add Image
-                                </label>
-                            </div>
-                        )}
-                    </div>
+                   </div>
+              ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-4 border-l-2 border-brand-100 mt-4">
+                    {q.options.map((opt, optIndex) => (
+                      <div key={opt.id} className={`flex flex-col p-2 rounded border ${opt.isCorrect ? 'bg-green-50 border-green-200' : 'bg-white border-slate-200'}`}>
+                        <div className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              checked={!!opt.isCorrect}
+                              onChange={() => toggleCorrectOption(qIndex, optIndex)}
+                              className="text-brand-600 focus:ring-brand-500 h-4 w-4 cursor-pointer shrink-0"
+                              title="Mark as correct answer"
+                            />
+                            <input
+                              type="text"
+                              value={opt.text}
+                              onChange={(e) => updateOptionText(qIndex, optIndex, e.target.value)}
+                              className="flex-1 bg-transparent border-none outline-none text-sm min-w-0"
+                              placeholder={`Option ${optIndex + 1}`}
+                            />
+                        </div>
+                        
+                        {/* Option Image Upload */}
+                        <div className="ml-6 mt-2">
+                             {opt.imageUrl ? (
+                                <div className="relative inline-block border rounded p-1 bg-white">
+                                    <img src={opt.imageUrl} alt="Option" className="h-12 object-contain" />
+                                    <button 
+                                        onClick={() => removeOptionImage(qIndex, optIndex)}
+                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"
+                                        title="Remove Image"
+                                    >
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <div>
+                                    <input 
+                                        type="file" 
+                                        id={`file-opt-${qIndex}-${optIndex}`}
+                                        className="hidden" 
+                                        accept="image/*"
+                                        onChange={(e) => handleOptionImageUpload(qIndex, optIndex, e)}
+                                    />
+                                    <label 
+                                        htmlFor={`file-opt-${qIndex}-${optIndex}`} 
+                                        className="inline-flex items-center text-xs text-slate-400 hover:text-brand-600 cursor-pointer"
+                                    >
+                                        <ImageIcon className="w-3 h-3 mr-1" /> Add Image
+                                    </label>
+                                </div>
+                            )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+              )}
             </div>
           ))}
         </div>

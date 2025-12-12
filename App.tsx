@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserRole, ViewState, Exam, ExamResult, StudentAnswer } from './types';
 import { extractTextFromPdf } from './services/pdfService';
-import { parseExamWithGemini } from './services/geminiService';
+import { parseExamWithGemini, generateExamByTopic } from './services/geminiService';
 import { saveExam, getExams, deleteExam, saveResult } from './services/storageService';
 import { Button } from './components/Button';
 import { ExamEditor } from './components/ExamEditor';
@@ -101,8 +101,6 @@ const App: React.FC = () => {
     setProcessingStatus(`Retrieving ${topic}...`);
     
     try {
-        // Since we cannot directly fetch the file from the external Vercel app due to CORS,
-        // we use Gemini to reconstruct the exam based on the specific topic/year.
         const generatedData = await generateExamByTopic(topic);
         
         const gateExam: Exam = {
@@ -170,9 +168,19 @@ const App: React.FC = () => {
     activeExam.questions.forEach(q => {
       const studentAns = answers.find(a => a.questionId === q.id);
       if (studentAns) {
-        const selectedOpt = q.options.find(o => o.id === studentAns.selectedOptionId);
-        if (selectedOpt && selectedOpt.isCorrect) {
-          score++;
+        if (q.type === 'MCQ') {
+            const selectedOpt = q.options.find(o => o.id === studentAns.selectedOptionId);
+            if (selectedOpt && selectedOpt.isCorrect) {
+              score++;
+            }
+        } else if (q.type === 'INTEGER') {
+            // Check numeric answer
+            if (studentAns.numericInput && q.correctAnswer) {
+                // Simple string comparison for now, could be improved with float parsing tolerance
+                if (parseFloat(studentAns.numericInput) === parseFloat(q.correctAnswer)) {
+                    score++;
+                }
+            }
         }
       }
     });

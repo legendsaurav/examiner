@@ -15,6 +15,7 @@ export enum ViewState {
 }
 
 export type QuestionStatus = 'not_visited' | 'not_answered' | 'answered' | 'marked_for_review' | 'answered_marked_for_review';
+export type QuestionType = 'MCQ' | 'INTEGER';
 
 export interface Option {
   id: string;
@@ -26,9 +27,11 @@ export interface Option {
 export interface Question {
   id: string;
   text: string;
+  type: QuestionType; // New field to distinguish question types
   imageUrl?: string; // Optional image for the question
   options: Option[];
   correctOptionIndex?: number; // Helper for AI parsing
+  correctAnswer?: string; // For INTEGER questions (stored as string to handle decimals/negatives)
 }
 
 export interface Exam {
@@ -42,7 +45,8 @@ export interface Exam {
 
 export interface StudentAnswer {
   questionId: string;
-  selectedOptionId: string;
+  selectedOptionId?: string; // For MCQ
+  numericInput?: string;     // For INTEGER
 }
 
 export interface ExamResult {
