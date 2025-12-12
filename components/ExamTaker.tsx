@@ -190,11 +190,14 @@ export const ExamTaker: React.FC<ExamTakerProps> = ({ exam, onComplete, onExit }
   };
 
   const handleSubmit = () => {
-    const answerArray: StudentAnswer[] = Object.entries(answers).map(([qId, ans]) => ({
-      questionId: qId,
-      selectedOptionId: ans.type === 'MCQ' ? ans.value : undefined,
-      numericInput: ans.type === 'INTEGER' ? ans.value : undefined
-    }));
+    const answerArray: StudentAnswer[] = Object.entries(answers).map(([qId, ans]) => {
+      const a = ans as { type: 'MCQ' | 'INTEGER'; value: string };
+      return {
+        questionId: qId,
+        selectedOptionId: a.type === 'MCQ' ? a.value : undefined,
+        numericInput: a.type === 'INTEGER' ? a.value : undefined
+      };
+    });
     onComplete(answerArray);
   };
 
