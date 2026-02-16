@@ -1,7 +1,7 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
 
 // Gemini API Key
-export const key = "AIzaSyAHmjIx2Mb1jcixG_hEUhYiy41PF3ubTaE";
+export const key = "AIzaSyARgjr5S-hg942T4Bx0Hv52Ux0KNhkq5bA";
 import { Exam, Question, QuestionType } from "../types";
 
 const EXAM_SCHEMA: Schema = {

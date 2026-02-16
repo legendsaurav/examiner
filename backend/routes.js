@@ -1,6 +1,28 @@
 const express = require('express');
-const Exam = require('./models');
+const { Exam, Result } = require('./models');
 const router = express.Router();
+
+// Save exam result
+router.post('/results', async (req, res) => {
+  try {
+    const result = new Result(req.body);
+    await result.save();
+    res.status(201).json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Get all results
+router.get('/results', async (req, res) => {
+  try {
+    const results = await Result.find();
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 // Create exam
 router.post('/exams', async (req, res) => {

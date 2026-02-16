@@ -31,8 +31,9 @@ const App: React.FC = () => {
     refreshExams();
   }, []);
 
-  const refreshExams = () => {
-    setExams(getExams().sort((a, b) => b.createdAt - a.createdAt));
+  const refreshExams = async () => {
+    const exams = await getExams();
+    setExams(exams.sort((a, b) => b.createdAt - a.createdAt));
   };
 
   // --- Handlers ---
@@ -121,17 +122,17 @@ const App: React.FC = () => {
     }
   };
 
-  const saveDraftExam = (updatedExam: Exam) => {
-    saveExam(updatedExam);
-    refreshExams();
+  const saveDraftExam = async (updatedExam: Exam) => {
+    await saveExam(updatedExam);
+    await refreshExams();
     setCurrentDraftExam(null);
     setView(ViewState.ADMIN_DASHBOARD);
   };
 
-  const handleDeleteExam = (id: string) => {
+  const handleDeleteExam = async (id: string) => {
     if (confirm('Are you sure you want to delete this exam?')) {
-      deleteExam(id);
-      refreshExams();
+      await deleteExam(id);
+      await refreshExams();
     }
   };
 
@@ -161,7 +162,7 @@ const App: React.FC = () => {
     setView(ViewState.EXAM_TAKER);
   };
 
-  const finishExam = (answers: StudentAnswer[]) => {
+  const finishExam = async (answers: StudentAnswer[]) => {
     if (!activeExam) return;
     
     let score = 0;
@@ -193,7 +194,8 @@ const App: React.FC = () => {
       timestamp: Date.now()
     };
 
-    saveResult(result);
+    // Ensure this function is marked async in the parent declaration
+    await saveResult(result);
     setLastResult(result);
     setView(ViewState.EXAM_RESULT);
   };

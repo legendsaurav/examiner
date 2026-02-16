@@ -12,6 +12,16 @@ const ExamSchema = new mongoose.Schema({
   questions: [QuestionSchema],
 });
 
-const Exam = mongoose.model('Exam', ExamSchema);
 
-module.exports = Exam;
+const ResultSchema = new mongoose.Schema({
+  examId: { type: mongoose.Schema.Types.ObjectId, ref: 'Exam', required: true },
+  score: Number,
+  totalQuestions: Number,
+  answers: [{}],
+  timestamp: { type: Date, default: Date.now }
+});
+
+const Exam = mongoose.model('Exam', ExamSchema);
+const Result = mongoose.model('Result', ResultSchema);
+
+module.exports = { Exam, Result };
