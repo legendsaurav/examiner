@@ -1,0 +1,96 @@
+/* ===== SmartExam AI — animated 3D landing ===== */
+:root { --brand: #2563eb; --brand2: #4f46e5; --brand3: #06b6d4; }
+
+/* Deep animated backdrop */
+.landing-bg {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  padding: 1.5rem;
+  background:
+    radial-gradient(1100px 700px at 12% 8%, #22304a 0%, rgba(15,23,42,0) 55%),
+    radial-gradient(900px 700px at 88% 90%, #1e2a52 0%, rgba(11,16,32,0) 55%),
+    linear-gradient(160deg, #0b1020 0%, #0f172a 55%, #0b1224 100%);
+}
+
+/* Floating aurora orbs */
+.orb { position: absolute; border-radius: 50%; filter: blur(72px); pointer-events: none; will-change: transform; }
+.orb-1 { width: 460px; height: 460px; background: #3b82f6; opacity: .50; top: -130px; left: -90px; animation: float1 16s ease-in-out infinite; }
+.orb-2 { width: 420px; height: 420px; background: #6366f1; opacity: .45; bottom: -150px; right: -70px; animation: float2 21s ease-in-out infinite; }
+.orb-3 { width: 340px; height: 340px; background: #06b6d4; opacity: .30; top: 42%; left: 56%; animation: float3 26s ease-in-out infinite; }
+@keyframes float1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(70px,45px)} }
+@keyframes float2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-55px,-45px)} }
+@keyframes float3 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-45px,35px) scale(1.12)} }
+
+/* Subtle grid, faded toward the edges */
+.landing-grid {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
+  background-size: 46px 46px;
+  -webkit-mask-image: radial-gradient(circle at 50% 42%, #000 0%, transparent 72%);
+  mask-image: radial-gradient(circle at 50% 42%, #000 0%, transparent 72%);
+}
+
+/* 3D tilt */
+.tilt-scene { perspective: 1500px; position: relative; z-index: 2; width: 100%; max-width: 60rem; }
+.tilt-card {
+  transform-style: preserve-3d;
+  transition: transform .2s ease-out;
+  will-change: transform;
+  border-radius: 26px;
+}
+
+/* Glass surface */
+.glass {
+  background: rgba(255,255,255,.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,.65);
+  box-shadow:
+    0 45px 90px -35px rgba(2,6,23,.8),
+    0 10px 34px -14px rgba(37,99,235,.4),
+    inset 0 1px 0 rgba(255,255,255,.6);
+}
+
+/* Floating 3D logo badge */
+.logo3d { animation: floatY 4.6s ease-in-out infinite; box-shadow: 0 20px 45px -14px rgba(37,99,235,.65); }
+@keyframes floatY { 0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(-9px) rotate(2deg)} }
+
+/* Animated gradient wordmark */
+.gradient-text {
+  background: linear-gradient(90deg,#2563eb,#6366f1,#06b6d4,#2563eb);
+  background-size: 300% 100%;
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+  animation: shimmerText 7s linear infinite;
+}
+@keyframes shimmerText { to { background-position: 300% 0; } }
+
+/* Role cards — 3D hover */
+.role3d { transition: transform .25s cubic-bezier(.22,.61,.36,1), box-shadow .25s ease, border-color .2s ease; will-change: transform; transform-style: preserve-3d; }
+.role3d:hover { transform: translateY(-6px) rotateX(6deg) scale(1.015); }
+.role3d .go-arrow { transition: transform .25s ease, opacity .2s ease; opacity: 0; transform: translateX(-6px); }
+.role3d:hover .go-arrow { opacity: 1; transform: translateX(0); }
+
+/* Entrance */
+.fade-up { opacity: 0; transform: translateY(20px); animation: fadeUp .75s cubic-bezier(.22,.61,.36,1) forwards; }
+@keyframes fadeUp { to { opacity: 1; transform: none; } }
+.d1{animation-delay:.06s}.d2{animation-delay:.16s}.d3{animation-delay:.26s}.d4{animation-delay:.36s}.d5{animation-delay:.46s}
+
+/* Feature chips */
+.chip { animation: floatY 6.5s ease-in-out infinite; }
+.chip-2 { animation-delay: .8s; }
+.chip-3 { animation-delay: 1.6s; }
+
+/* Modal entrance */
+.modal-pop { animation: pop .3s cubic-bezier(.2,1.2,.36,1) both; }
+@keyframes pop { from{opacity:0; transform: translateY(12px) scale(.96)} to{opacity:1; transform:none} }
+
+@media (prefers-reduced-motion: reduce) {
+  .orb, .logo3d, .gradient-text, .chip { animation: none !important; }
+  .fade-up { animation: none !important; opacity: 1; transform: none; }
+  .tilt-card, .role3d { transition: none !important; }
+}

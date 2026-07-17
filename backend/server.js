@@ -5,7 +5,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '12mb' })); // exam text (multiple PDFs) can be large
 app.use(cors());
 
 const PORT = process.env.PORT || 5000;

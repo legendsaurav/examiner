@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { UserRole, ViewState, Exam, ExamResult, StudentAnswer } from './types';
 import { extractTextFromPdf } from './services/pdfService';
-import { parseExamWithGemini, generateExamByTopic } from './services/geminiService';
+import { extractExamFromText, generateExamByTopic } from './services/kimiService';
 import { saveExam, getExams, deleteExam, saveResult } from './services/storageService';
 import { Button } from './components/Button';
 import { ExamEditor } from './components/ExamEditor';
 import { ExamTaker } from './components/ExamTaker';
 import { GateExplorer } from './components/GateExplorer';
-import { Upload, BookOpen, User, GraduationCap, LayoutDashboard, FileText, Trash2, PlayCircle, LogOut, CheckCircle, AlertCircle, Lock, Compass, Library } from 'lucide-react';
+import { GenerateModal } from './components/GenerateModal';
+import { LandingPage } from './components/LandingPage';
+import { Upload, BookOpen, User, GraduationCap, LayoutDashboard, FileText, Trash2, PlayCircle, LogOut, CheckCircle, AlertCircle, Lock, Compass, Library, Sparkles } from 'lucide-react';
 
 const App: React.FC = () => {
   const [role, setRole] = useState<UserRole>(UserRole.NONE);
@@ -18,6 +20,7 @@ const App: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState('');
   const [currentDraftExam, setCurrentDraftExam] = useState<Exam | null>(null);
+  const [showGenerate, setShowGenerate] = useState(false);
   
   // Auth State
   const [showAdminLogin, setShowAdminLogin] = useState(false);
@@ -72,9 +75,10 @@ const App: React.FC = () => {
         combinedText += `\n\n--- FILE START: ${files[i].name} ---\n${text}\n--- FILE END ---\n`;
       }
       
-      // 2. Send to Gemini
-      setProcessingStatus('Analyzing combined content with Gemini AI...');
-      const parsedData = await parseExamWithGemini(combinedText);
+      // 2. Send to AI (via our backend gateway proxy) -> questions Markdown -> parsed.
+      // Large papers are split into chunks server-side, so this can take a few minutes.
+      setProcessingStatus('Analyzing with AI (large papers are processed in parts — this can take a few minutes)...');
+      const parsedData = await extractExamFromText(combinedText);
       
       // 3. Create Draft
       const draftExam: Exam = {
@@ -223,96 +227,17 @@ const App: React.FC = () => {
 
   if (view === ViewState.HOME) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-200 flex items-center justify-center p-4">
-        {/* Admin Login Modal */}
-        {showAdminLogin && (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-                <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                            <Lock className="w-6 h-6 text-brand-600" /> Admin Access
-                        </h2>
-                        <button onClick={() => setShowAdminLogin(false)} className="text-slate-400 hover:text-slate-600">
-                            <Trash2 className="w-5 h-5 rotate-45" /> 
-                        </button>
-                    </div>
-                    
-                    <p className="text-slate-600 mb-6">This area is restricted to administrators. Please enter the access key to proceed.</p>
-                    
-                    <form onSubmit={handleAdminLoginSubmit}>
-                        <div className="mb-6">
-                            <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Access Key</label>
-                            <input 
-                                type="password" 
-                                value={passwordInput}
-                                onChange={(e) => setPasswordInput(e.target.value)}
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all font-mono text-lg"
-                                placeholder="••••••••"
-                                autoFocus
-                            />
-                        </div>
-                        <div className="flex justify-end gap-3">
-                            <button 
-                                type="button"
-                                onClick={() => { setShowAdminLogin(false); setPasswordInput(''); }}
-                                className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-lg transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button 
-                                type="submit"
-                                className="px-6 py-2.5 bg-brand-600 text-white font-bold rounded-lg hover:bg-brand-700 transition-colors shadow-lg shadow-brand-200"
-                            >
-                                Verify Access
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        )}
-
-        <div className="max-w-4xl w-full bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
-          <div className="flex-1 p-12 flex flex-col justify-center items-start space-y-6">
-            <div className="inline-block p-3 bg-brand-100 rounded-lg">
-                <BookOpen className="w-8 h-8 text-brand-600" />
-            </div>
-            <h1 className="text-4xl font-bold text-slate-900 tracking-tight">SmartExam AI</h1>
-            <p className="text-lg text-slate-600">
-              Transform PDF documents into interactive online exams instantly using Gemini AI.
-            </p>
-          </div>
-          <div className="flex-1 bg-slate-50 p-12 flex flex-col justify-center gap-6 border-l border-slate-100">
-            <h2 className="text-xl font-semibold text-slate-800 mb-4">Select your role to continue</h2>
-            
-            <button 
-              onClick={handleAdminAccessRequest}
-              className="group flex items-center p-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-brand-500 transition-all"
-            >
-              <div className="p-3 bg-blue-100 rounded-full mr-4 group-hover:bg-blue-200 transition-colors">
-                <LayoutDashboard className="w-6 h-6 text-blue-700" />
-              </div>
-              <div className="text-left">
-                <p className="font-bold text-slate-800">Admin Portal</p>
-                <p className="text-sm text-slate-500">Upload PDFs & Manage Exams</p>
-              </div>
-            </button>
-
-            <button 
-               onClick={() => { setRole(UserRole.STUDENT); setView(ViewState.STUDENT_DASHBOARD); }}
-               className="group flex items-center p-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-green-500 transition-all"
-            >
-              <div className="p-3 bg-green-100 rounded-full mr-4 group-hover:bg-green-200 transition-colors">
-                <GraduationCap className="w-6 h-6 text-green-700" />
-              </div>
-              <div className="text-left">
-                <p className="font-bold text-slate-800">Student Portal</p>
-                <p className="text-sm text-slate-500">Take Assigned Exams</p>
-              </div>
-            </button>
-          </div>
-        </div>
-      </div>
+      <LandingPage
+        onSelectStudent={() => { setRole(UserRole.STUDENT); setView(ViewState.STUDENT_DASHBOARD); }}
+        onAdminSubmit={(password) => {
+          if (password === 'admin123') {
+            setRole(UserRole.ADMIN);
+            setView(ViewState.ADMIN_DASHBOARD);
+            return true;
+          }
+          return false;
+        }}
+      />
     );
   }
 
@@ -344,10 +269,14 @@ const App: React.FC = () => {
                 <p className="text-slate-500">Upload new exams or manage existing ones.</p>
             </div>
             
+            <div className="flex flex-wrap gap-3 items-center">
+            <Button variant="secondary" onClick={() => setShowGenerate(true)} disabled={isProcessing}>
+                <Sparkles className="w-4 h-4 mr-2" /> Generate New Paper
+            </Button>
             <div className="relative">
-                <input 
-                    type="file" 
-                    id="pdf-upload" 
+                <input
+                    type="file"
+                    id="pdf-upload"
                     accept="application/pdf"
                     className="hidden"
                     multiple // Allow multiple files
@@ -372,6 +301,7 @@ const App: React.FC = () => {
                         </>
                     )}
                 </label>
+            </div>
             </div>
           </div>
 
@@ -420,6 +350,12 @@ const App: React.FC = () => {
             )}
           </div>
         </main>
+        {showGenerate && (
+          <GenerateModal
+            onClose={() => setShowGenerate(false)}
+            onGenerated={(exam) => { setShowGenerate(false); setCurrentDraftExam(exam); setView(ViewState.EXAM_EDITOR); }}
+          />
+        )}
       </div>
     );
   }

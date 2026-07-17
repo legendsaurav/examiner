@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Env & runtime data
+.env
+backend/.env
+backend/data-store.json
