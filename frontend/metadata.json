@@ -1,0 +1,5 @@
+{
+  "name": "SmartExam AI",
+  "description": "An intelligent exam management system that uses Gemini AI to parse PDF exams into interactive tests.",
+  "requestFramePermissions": []
+}
